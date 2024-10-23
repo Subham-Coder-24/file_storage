@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"  // Assuming you're using PostgreSQL
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int       @id @default(autoincrement())
+  email      String    @unique
+  name       String
+  password   String
+  files      File[]
+  workspaces WorkspaceMember[]
+  adminWorkspaces Workspace[]     @relation("admin") // Corresponding relation field
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model File {
+  id         Int       @id @default(autoincrement())
+  fileName   String
+  fileType   String
+  fileUrl    String
+  isFavorite Boolean   @default(false)
+  isDeleted  Boolean   @default(false) // If true, moved to trash
+  owner      User      @relation(fields: [ownerId], references: [id])
+  ownerId    Int
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model Workspace {
+  id         Int                 @id @default(autoincrement())
+  name       String
+  admin      User                @relation("admin", fields: [adminId], references: [id])
+  adminId    Int
+  members    WorkspaceMember[]
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+}
+
+model WorkspaceMember {
+  id          Int       @id @default(autoincrement())
+  role        Role
+  user        User      @relation(fields: [userId], references: [id])
+  userId      Int
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId Int
+}
+
+enum Role {
+  ADMIN
+  USER
+}
