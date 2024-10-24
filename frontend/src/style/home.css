@@ -82,3 +82,40 @@
   justify-content: space-between;
   align-items: center;
 }
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropbtn {
+  background-color: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0; /* Align dropdown to the right */
+  background-color: white;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.dropdown-content button {
+  display: block;
+  padding: 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  width: 100%; /* Full width for buttons */
+}
+
+.dropdown-content button:hover {
+  background-color: #f1f1f1; /* Hover effect */
+}

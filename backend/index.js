@@ -26,11 +26,11 @@ app.use(cookieParser());
 app.use(express.json());
 
 // Routes
-// import { router as interRoutes } from "./routes/interRouter.js";
+import userRoutes from "./routes/userRoutes.js";
 import fileRoutes from "./routes/fileRouter.js";
 
 // Use Routes
-// app.use("/api", interRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/files", fileRoutes);
 
 // Function to process the raw data

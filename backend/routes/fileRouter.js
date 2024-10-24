@@ -1,10 +1,25 @@
 // routes/fileRoutes.js
 import express from "express";
-import { upload, uploadFile } from "../controller/fileController.js"; // Ensure the path is correct
+import {
+  getUserFiles,
+  upload,
+  uploadFile,
+  favoriteFile,
+  deleteFile,
+  getDeletedFiles,
+  getFavoriteFiles,
+} from "../controller/fileController.js"; // Ensure the path is correct
+import { isAuthenticateduser } from "../middleware/auth.js";
 
 const router = express.Router();
 
 // Route for uploading a file
-router.post("/upload", upload.single("file"), uploadFile);
+router.post("/upload", isAuthenticateduser, upload.single("file"), uploadFile);
+router.get("/get", isAuthenticateduser, getUserFiles);
+router.get("/favorite/:id", isAuthenticateduser, favoriteFile);
+router.get("/delete/:id", isAuthenticateduser, deleteFile);
+
+router.get("/favorite", isAuthenticateduser, getFavoriteFiles);
+router.get("/delete", isAuthenticateduser, getDeletedFiles);
 
 export default router;

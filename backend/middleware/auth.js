@@ -1,21 +1,34 @@
-import { verifyToken } from "@clerk/backend";
+import jwt from "jsonwebtoken";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export const isAuthenticateduser = async (req, res, next) => {
-  const { authorization } = req.headers;
+  let token;
 
-  if (!authorization) {
-    return res.status(401).json({ error: "Unauthorized" });
+  if (req.cookies.token) {
+    token = req.cookies.token;
+  } else if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    token = req.headers.authorization.split(" ")[1];
   }
 
-  const token = authorization.split(" ")[1];
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-  try {
-    const sessionClaims = await verifyToken(token, {
-      jwtKey: process.env.CLERK_JWT_KEY,
-    });
-    req.user_id = sessionClaims.sub;
-    next();
-  } catch (err) {
-    res.status(401).json({ error: "Invalid token" });
+      req.user = await prisma.user.findUnique({
+        where: { id: decoded.id },
+      });
+
+      next();
+    } catch (error) {
+      console.error(error);
+      res.status(401).json({ message: "Not authorized, token failed" });
+    }
+  } else {
+    res.status(401).json({ message: "Not authorized, no token" });
   }
 };

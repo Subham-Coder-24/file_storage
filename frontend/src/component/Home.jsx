@@ -1,11 +1,42 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "../style/home.css";
 import axios from "axios";
-
+import { useLocation } from "react-router-dom";
+import TableView from "./TableView.jsx";
+import GridView from "./GridView.jsx";
 const Home = () => {
   const [viewMode, setViewMode] = useState("table"); // 'table' or 'grid'
   const [file, setFile] = useState(null);
   const [message, setMessage] = useState("");
+  const [files, setFiles] = useState([]); // Store files from backend
+  // Fetch user's files when the component mounts
+  const location = useLocation();
+
+  const fetchFiles = async () => {
+    try {
+      if (location.pathname == "/dashboard/files") {
+        const response = await axios.get("http://localhost:4000/api/files/get");
+        setFiles(response.data.files || []);
+      }
+      if (location.pathname == "/dashboard/favorites") {
+        const response = await axios.get(
+          "http://localhost:4000/api/files/favorite"
+        ); // Assuming user ID is 1
+        setFiles(response.data.files || []);
+      }
+      if (location.pathname == "/dashboard/trash") {
+        const response = await axios.get(
+          "http://localhost:4000/api/files/delete"
+        ); // Assuming user ID is 1
+        setFiles(response.data.files || []);
+      }
+    } catch (error) {
+      console.error("Error fetching files", error);
+    }
+  };
+  useEffect(() => {
+    fetchFiles();
+  }, [location.pathname]);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -33,6 +64,7 @@ const Home = () => {
       setMessage("Failed to upload file");
     }
   };
+
   return (
     <div className="home">
       <div className="home-header">
@@ -81,60 +113,32 @@ const Home = () => {
 
       {/* Display Files */}
       <div className="file-display">
-        {viewMode === "table" ? <TableView /> : <GridView />}
+        {viewMode === "table" ? (
+          <TableView files={files} />
+        ) : (
+          <GridView files={files} />
+        )}
       </div>
     </div>
   );
 };
-
 export default Home;
 
-const TableView = () => {
-  const files = [
-    { name: "File1.jpg", type: "image", size: "2 MB" },
-    { name: "Document1.pdf", type: "document", size: "500 KB" },
-    { name: "Video1.mp4", type: "video", size: "10 MB" },
-    // Add more files here
-  ];
+const getFileTypeName = (mimeType) => {
+  const typeMapping = {
+    "application/pdf": "PDF",
+    "image/jpeg": "JPEG",
+    "image/png": "PNG",
+    "image/gif": "GIF",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      "Word",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+      "PPT",
+    "application/vnd.ms-excel": "Excel",
+    "application/zip": "ZIP",
+    "video/mp4": "MP4 Video",
+    // Add more mappings as needed
+  };
 
-  return (
-    <table className="file-table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Size</th>
-        </tr>
-      </thead>
-      <tbody>
-        {files.map((file, index) => (
-          <tr key={index}>
-            <td>{file.name}</td>
-            <td>{file.type}</td>
-            <td>{file.size}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-};
-const GridView = () => {
-  const files = [
-    { name: "File1.jpg", type: "image", size: "2 MB" },
-    { name: "Document1.pdf", type: "document", size: "500 KB" },
-    { name: "Video1.mp4", type: "video", size: "10 MB" },
-    // Add more files here
-  ];
-
-  return (
-    <div className="file-grid">
-      {files.map((file, index) => (
-        <div className="file-card" key={index}>
-          <h4>{file.name}</h4>
-          <p>Type: {file.type}</p>
-          <p>Size: {file.size}</p>
-        </div>
-      ))}
-    </div>
-  );
+  return typeMapping[mimeType] || "Unknown File Type"; // Default to 'Unknown File Type' if not found
 };
