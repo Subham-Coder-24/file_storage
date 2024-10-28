@@ -28,10 +28,12 @@ app.use(express.json());
 // Routes
 import userRoutes from "./routes/userRoutes.js";
 import fileRoutes from "./routes/fileRouter.js";
+import organizationRoutes from "./routes/organizationRouter.js";
 
 // Use Routes
 app.use("/api/users", userRoutes);
 app.use("/api/files", fileRoutes);
+app.use("/api/organization", organizationRoutes);
 
 // Function to process the raw data
 

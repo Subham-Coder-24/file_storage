@@ -24,8 +24,7 @@ function Login({ setUser }) {
         {
           email,
           password,
-        },
-        config
+        }
       );
       const { user, token } = response.data;
       localStorage.setItem("user", JSON.stringify(user));

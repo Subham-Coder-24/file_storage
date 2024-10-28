@@ -15,6 +15,7 @@ function App() {
     return {
       Authorization: `Bearer ${token}`,
       "Content-Type": "multipart/form-data",
+      // "Content-Type": "application/json",
     };
   };
   axios.interceptors.request.use(

@@ -4,15 +4,19 @@ import axios from "axios";
 import { useLocation } from "react-router-dom";
 import TableView from "./TableView.jsx";
 import GridView from "./GridView.jsx";
+import { ToastContainer, toast } from "react-toastify"; // Import Toast
+import "react-toastify/dist/ReactToastify.css"; // Import CSS
+import { Grid3x3 } from "lucide-react";
+import { TableOfContents } from "lucide-react";
+
 const Home = () => {
   const [viewMode, setViewMode] = useState("table"); // 'table' or 'grid'
   const [file, setFile] = useState(null);
-  const [message, setMessage] = useState("");
-  const [files, setFiles] = useState([]); // Store files from backend
-  // Fetch user's files when the component mounts
+  const [files, setFiles] = useState([]);
   const location = useLocation();
 
   const fetchFiles = async () => {
+    setFiles([]);
     try {
       if (location.pathname == "/dashboard/files") {
         const response = await axios.get("http://localhost:4000/api/files/get");
@@ -39,15 +43,15 @@ const Home = () => {
   }, [location.pathname]);
 
   const handleFileChange = (e) => {
+    toast.success("File addded successfully!");
     setFile(e.target.files[0]);
   };
+
   const handleSubmit = async (e) => {
-    console.log(e.target.files); // Handle file upload
     e.preventDefault();
 
     const formData = new FormData();
     formData.append("file", file);
-
     try {
       const response = await axios.post(
         "http://localhost:4000/api/files/upload",
@@ -58,67 +62,85 @@ const Home = () => {
           },
         }
       );
-
-      setMessage(response.data.message || "File uploaded successfully!");
+      toast.success(response.data.message || "File uploaded successfully!");
+      fetchFiles();
     } catch (error) {
-      setMessage("Failed to upload file");
+      toast.error("Failed to upload file");
     }
   };
 
   return (
     <div className="home">
       <div className="home-header">
-        <h1>Your Files</h1>
+        {location.pathname == "/dashboard/files" && <h1>Your Files</h1>}
+        {location.pathname == "/dashboard/favorites" && (
+          <h1>Your Favorites Files</h1>
+        )}
+        {location.pathname == "/dashboard/trash" && <h1>Trash</h1>}
 
-        <div>
+        <div className="search-container">
           <input
             type="text"
             placeholder="Search your files..."
             className="search-bar"
           />
-          <button>Submit</button>
+          <button className="search-button">Search</button>
         </div>
-
-        {/* <input
-          type="file"
-          onChange={handleFileUpload}
-          className="file-upload"
-        /> */}
-        <div>
+        <div className="upload-container">
           <form onSubmit={handleSubmit}>
-            <input type="file" onChange={handleFileChange} />
-            <button type="submit">Upload</button>
+            <input
+              type="file"
+              onChange={handleFileChange}
+              className="file-input"
+              id="file-upload"
+            />
+            <label htmlFor="file-upload" className="upload-label">
+              Choose File
+            </label>
+            <button type="submit" className="upload-button">
+              Upload
+            </button>
           </form>
-          <p>{message}</p>
-        </div>
-      </div>
-      <div className="togop">
-        {/* View Mode Toggle */}
-        <div className="view-toggle">
-          <button onClick={() => setViewMode("table")}>Table View</button>
-          <button onClick={() => setViewMode("grid")}>Grid View</button>
-        </div>
-
-        {/* Filter Options */}
-        <div className="filter-section">
-          <h3>Filter Files</h3>
-          <select>
-            <option value="all">All Files</option>
-            <option value="images">Images</option>
-            <option value="documents">Documents</option>
-            <option value="videos">Videos</option>
-          </select>
         </div>
       </div>
 
-      {/* Display Files */}
-      <div className="file-display">
-        {viewMode === "table" ? (
-          <TableView files={files} />
-        ) : (
-          <GridView files={files} />
-        )}
-      </div>
+      {files.length > 0 ? (
+        <>
+          <div className="togop">
+            <div className="view-toggle">
+              <div onClick={() => setViewMode("table")}>
+                <Grid3x3 />
+                <p>Table</p>
+              </div>
+              <div onClick={() => setViewMode("grid")}>
+                <TableOfContents />
+                <p>Grid</p>
+              </div>
+            </div>
+
+            {/* Filter Options */}
+            <div className="filter-section">
+              <h4>Type Filter</h4>
+              <select>
+                <option value="all">All Files</option>
+                <option value="images">Images</option>
+                <option value="documents">Documents</option>
+                <option value="videos">Videos</option>
+              </select>
+            </div>
+          </div>
+          <div className="file-display">
+            {viewMode === "table" ? (
+              <TableView files={files} fetchFiles={fetchFiles} />
+            ) : (
+              <GridView files={files} fetchFiles={fetchFiles} />
+            )}
+          </div>
+        </>
+      ) : (
+        <p>No files..</p>
+      )}
+      <ToastContainer />
     </div>
   );
 };

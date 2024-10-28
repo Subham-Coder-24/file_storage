@@ -4,13 +4,14 @@
   left: 0;
   right: 0;
   height: 60px;
-  background-color: #333;
-  color: white;
+  /* background-color: #333; */
+  /* color: white; */
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
   z-index: 1000;
+  border-bottom: 1px solid rgb(231, 230, 230);
 }
 
 .navbar ul {
@@ -26,6 +27,6 @@
 }
 
 .navbar ul li a {
-  color: white;
+  /* color: white; */
   text-decoration: none;
 }

@@ -1,8 +1,18 @@
 import axios from "axios";
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 
-const GridView = ({ files }) => {
+const GridView = ({ files, fetchFiles }) => {
   const [loading, setLoading] = useState(false);
+  const location = useLocation();
+  const [showActions, setShowActions] = useState(false);
+  const [selectedID, setShowselectedID] = useState();
+
+  const toggleActions = (id) => {
+    setShowselectedID();
+    setShowActions((prev) => !prev); // Toggle dropdown visibility
+    setShowselectedID(id);
+  };
 
   const handleFavorite = async (fileId) => {
     setLoading(true);
@@ -10,6 +20,7 @@ const GridView = ({ files }) => {
       await axios.get(`http://localhost:4000/api/files/favorite/${fileId}`);
       alert("File favorited successfully!");
       // refreshFiles(); // Call to refresh files after action
+      fetchFiles();
     } catch (error) {
       console.error("Error favoriting file:", error);
       alert("Failed to favorite file.");
@@ -17,7 +28,6 @@ const GridView = ({ files }) => {
       setLoading(false);
     }
   };
-
   const handleDelete = async (fileId) => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this file?"
@@ -28,6 +38,7 @@ const GridView = ({ files }) => {
         await axios.get(`http://localhost:4000/api/files/delete/${fileId}`);
         alert("File moved to trash successfully!");
         // refreshFiles(); // Call to refresh files after action
+        fetchFiles();
       } catch (error) {
         console.error("Error deleting file:", error);
         alert("Failed to delete file.");
@@ -36,23 +47,113 @@ const GridView = ({ files }) => {
       }
     }
   };
-
+  const handlePermanentDelete = async (fileId) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want permanent delete this file?"
+    );
+    if (confirmDelete) {
+      setLoading(true);
+      try {
+        await axios.get(
+          `http://localhost:4000/api/files/permanent/delete/${fileId}`
+        );
+        alert("File moved to trash successfully!");
+        fetchFiles();
+        // refreshFiles(); // Call to refresh files after action
+      } catch (error) {
+        console.error("Error deleting file:", error);
+        alert("Failed to delete file.");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+  const handleRestore = async (fileId) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want restore this file?"
+    );
+    if (confirmDelete) {
+      setLoading(true);
+      try {
+        await axios.get(`http://localhost:4000/api/files/restore/${fileId}`);
+        alert("File moved to trash successfully!");
+        fetchFiles();
+        // refreshFiles(); // Call to refresh files after action
+      } catch (error) {
+        console.error("Error deleting file:", error);
+        alert("Failed to delete file.");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
   return (
     <div className="file-grid">
       {files.map((file, index) => (
         <div className="file-card" key={index}>
-          <h4>{file.fileName}</h4>
+          <div className="file_card_first">
+            <h4>
+              {file.fileName.length > 15
+                ? `${file.fileName.slice(0, 15)}...`
+                : file.fileName}
+            </h4>
+
+            <div className="action-dots">
+              {/* Three dots button to toggle actions */}
+              <button
+                onClick={() => toggleActions(file.id)}
+                className="three-dots"
+              >
+                ⋮
+              </button>
+
+              {showActions && selectedID == file.id && (
+                <div className="dropdown-actions">
+                  {location.pathname !== "/dashboard/trash" && (
+                    <button
+                      onClick={() => handleFavorite(file.id)}
+                      disabled={loading}
+                    >
+                      {file.isFavorite ? "★" : "☆"} {/* Toggle star icon */}
+                    </button>
+                  )}
+
+                  {location.pathname === "/dashboard/trash" ? (
+                    <>
+                      <button
+                        onClick={() => handlePermanentDelete(file.id)}
+                        disabled={loading}
+                      >
+                        Delete
+                      </button>
+                      <button
+                        onClick={() => handleRestore(file.id)}
+                        disabled={loading}
+                      >
+                        Restore
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => handleDelete(file.id)}
+                      disabled={loading}
+                    >
+                      Trash
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
           <p>Type: {getFileTypeName(file.fileType)}</p>
-          <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">
-            View File
-          </a>
-          <div className="action-dots">
-            <button onClick={() => handleFavorite(file.id)} disabled={loading}>
-              {file.isFavorite ? "★" : "☆"} {/* Toggle star icon */}
-            </button>
-            <button onClick={() => handleDelete(file.id)} disabled={loading}>
-              delete
-            </button>
+          <img
+            src="https://icons.veryicon.com/png/o/miscellaneous/general-icon-library/preview-65.png"
+            alt=""
+          />
+          <div className="viewfile">
+            <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">
+              View File
+            </a>
           </div>
         </div>
       ))}
