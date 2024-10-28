@@ -25,6 +25,7 @@ model File {
   fileName   String
   fileType   String
   fileUrl    String
+  previewUrl    String?
   isFavorite Boolean   @default(false)
   isDeleted  Boolean   @default(false) // If true, moved to trash
   owner      User      @relation(fields: [ownerId], references: [id])

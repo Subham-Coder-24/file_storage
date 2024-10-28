@@ -2,6 +2,7 @@ import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import { PrismaClient } from "@prisma/client";
 import path from "path";
+import { PDFDocument } from "pdf-lib";
 
 const prisma = new PrismaClient();
 
@@ -28,7 +29,6 @@ const uploadFile = async (req, res) => {
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-
     const result = await cloudinary.uploader.upload(file.path, {
       folder: "storage",
       resource_type: "raw",
@@ -69,7 +69,7 @@ const getUserFiles = async (req, res) => {
     });
 
     if (!userFiles || userFiles.length === 0) {
-      return res.status(404).json({ message: "No files found for this user." });
+      return res.status(200).json({ message: "No files found for this user." });
     }
 
     res.status(200).json({
@@ -172,7 +172,7 @@ const getDeletedFiles = async (req, res) => {
     });
 
     if (!deletedFiles || deletedFiles.length === 0) {
-      return res.status(404).json({ message: "No deleted files found." });
+      return res.status(200).json({ message: "No deleted files found." });
     }
 
     res.status(200).json({
@@ -199,7 +199,7 @@ const getFavoriteFiles = async (req, res) => {
     });
 
     if (!favoriteFiles || favoriteFiles.length === 0) {
-      return res.status(404).json({ message: "No favorite files found." });
+      return res.status(200).json({ message: "No favorite files found." });
     }
 
     res.status(200).json({
@@ -211,6 +211,60 @@ const getFavoriteFiles = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch favorite files" });
   }
 };
+const permanentDelete = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Fetch the file from the database to get the Cloudinary public_id
+    const file = await prisma.file.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!file) {
+      return res.status(404).json({ error: "File not found" });
+    }
+
+    // Extract Cloudinary public_id from the file URL
+    const cloudinaryPublicId = file.fileUrl.split("/").slice(-2).join("/");
+
+    // Delete the file from Cloudinary
+    await cloudinary.uploader.destroy(cloudinaryPublicId, {
+      resource_type: "raw", // Specify resource type if it's not an image
+    });
+
+    // Delete the file from the database
+    await prisma.file.delete({
+      where: { id: parseInt(id) },
+    });
+
+    res.status(200).json({ message: "File permanently deleted" });
+  } catch (error) {
+    console.error("Error permanently deleting file:", error);
+    res.status(500).json({ error: "Failed to delete file" });
+  }
+};
+const restoreFile = async (req, res) => {
+  const { id } = req.params; // Assuming the file ID is passed as a URL parameter
+
+  try {
+    // Find the file by ID and update isDelete to false
+    const updatedFile = await prisma.file.update({
+      where: { id: parseInt(id) },
+      data: { isDeleted: false },
+    });
+
+    if (!updatedFile) {
+      return res.status(200).json({ message: "File not found" });
+    }
+
+    res
+      .status(200)
+      .json({ message: "File restored successfully", file: updatedFile });
+  } catch (error) {
+    console.error("Error restoring file:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 export {
   upload,
@@ -220,4 +274,6 @@ export {
   deleteFile,
   getDeletedFiles,
   getFavoriteFiles,
+  permanentDelete,
+  restoreFile,
 };
