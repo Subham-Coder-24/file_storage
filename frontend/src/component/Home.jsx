@@ -15,11 +15,15 @@ const Home = () => {
   const [files, setFiles] = useState([]);
   const location = useLocation();
 
-  const fetchFiles = async () => {
+  const fetchPersonalFiles = async () => {
     setFiles([]);
     try {
       if (location.pathname == "/dashboard/files") {
         const response = await axios.get("http://localhost:4000/api/files/get");
+        // const organizationId = localStorage.getItem("selectedOrganizationId");
+        // const response = await axios.get(
+        //   `http://localhost:4000/api/organization/getfiles/${organizationId}`
+        // );
         setFiles(response.data.files || []);
       }
       if (location.pathname == "/dashboard/favorites") {
@@ -39,7 +43,7 @@ const Home = () => {
     }
   };
   useEffect(() => {
-    fetchFiles();
+    fetchPersonalFiles();
   }, [location.pathname]);
 
   const handleFileChange = (e) => {
@@ -63,7 +67,7 @@ const Home = () => {
         }
       );
       toast.success(response.data.message || "File uploaded successfully!");
-      fetchFiles();
+      fetchPersonalFiles();
     } catch (error) {
       toast.error("Failed to upload file");
     }
@@ -131,9 +135,12 @@ const Home = () => {
           </div>
           <div className="file-display">
             {viewMode === "table" ? (
-              <TableView files={files} fetchFiles={fetchFiles} />
+              <TableView
+                files={files}
+                fetchPersonalFiles={fetchPersonalFiles}
+              />
             ) : (
-              <GridView files={files} fetchFiles={fetchFiles} />
+              <GridView files={files} fetchPersonalFiles={fetchPersonalFiles} />
             )}
           </div>
         </>

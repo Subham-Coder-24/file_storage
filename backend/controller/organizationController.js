@@ -74,4 +74,53 @@ const getUserWorkspaces = async (req, res) => {
   }
 };
 
-export { createWorkspace, getUserWorkspaces };
+const getOrganizationFiles = async (req, res) => {
+  try {
+    const { organizationId } = req.params;
+    const userId = req.user.id; // Assuming req.user.id holds the logged-in user's ID
+
+    // Step 1: Check if the user is a member of the specified organization
+    const isMember = await prisma.workspaceMember.findFirst({
+      where: {
+        userId: userId,
+        workspaceId: organizationId,
+      },
+    });
+
+    if (!isMember) {
+      return res
+        .status(403)
+        .json({ message: "Access denied. Not a member of this organization." });
+    }
+
+    // Step 2: Get all user IDs who are members of the same organization
+    const memberIds = await prisma.workspaceMember.findMany({
+      where: {
+        workspaceId: organizationId,
+      },
+      select: {
+        userId: true,
+      },
+    });
+
+    const userIds = memberIds.map((member) => member.userId);
+
+    // Step 3: Fetch all files owned by these users
+    const files = await prisma.file.findMany({
+      where: {
+        ownerId: {
+          in: userIds,
+        },
+      },
+    });
+
+    return res.status(200).json({ files });
+  } catch (error) {
+    console.error("Error fetching organization files:", error);
+    return res
+      .status(500)
+      .json({ message: "Failed to fetch files", error: error.message });
+  }
+};
+
+export { createWorkspace, getUserWorkspaces, getOrganizationFiles };
